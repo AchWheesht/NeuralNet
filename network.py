@@ -2,12 +2,19 @@ import numpy as np
 import copy
 import statistics as stat
 import matplotlib.pyplot as plt
+import draw_neural_net as printer
 
 #seed random number to make calculations consistent
 #np.random.seed(1)
 
 class Neuron:
-    def __init__(self, name, layer, number, neuron_type="normal"):
+    """A repeatable class that simulates a neural node. Stores the following information:
+        [1] Name and location of neuron (name, layer, number)
+        [2] The nodes type (input, output, normal or bias)
+        [3] The branches that terminate at this neuron (input_branches)
+        [4] The branches that originate from this neuron (output_branches)
+        [5] The Neurons Last recorded value and error during propagation (value, error)"""
+    def __init__(self, name, layer, number, neuron_type="normal", threshold=None, threshold_change=None):
         self.name = name
         self.layer = layer
         self.number = number
@@ -15,12 +22,18 @@ class Neuron:
         self.input_branches = []
         self.output_branches = []
         self.value = None
+        self.threshold = threshold
+        self.threshold_change = threshold_change
         self.error = None
 
     def __repr__(self):
         return "(Neuron Object. Layer {}, Number {}. Value {}.)".format(self.layer, self.number, self.value)
 
 class Branch:
+    """A branch linking two neurons together. Knows:
+        [1] The neuron it originates from (start_neuron)
+        [2] The neuron it terminates at (end_neuron)
+        [3] Its own weight (weight)"""
     def __init__(self, start, end, weight=float(0)):
         self.start_neuron = start
         self.end_neuron = end
@@ -36,11 +49,23 @@ class Branch:
             self.weight)
 
 class Network:
-    def __init__(self, input_count, output_count, hidden_layers_count, hidden_layers_neuron_count, random_weights=True, bias_node=True):
-        self.input_count = input_count
-        self.output_count = output_count
-        self.hidden_layers_count = hidden_layers_count
-        self.hidden_layers_neuron_count = hidden_layers_neuron_count
+    """A simulation of a neural network using objects to represent neurons and the branches between them. Use the following parameters:
+        [1] dimensions (list of int) - a list for the dimensions on the network: [input neurons, output neurons, number of hidden layers, number of neurons per hidden layer] (requred)
+        [1] input_count (int) - How many input neurons the network should have (required)
+        [2] output_count (int) - How many output neurons the network should have (required)
+        [3] hidden_layers (int) - How many hidden layers the network hidden_layers (required)
+        [4] hidden_layers_count(int) - How many neurons are in each hidden layers (requried)
+        [5] random_weights (bool) - True will give each branch in the network a random weight on generation (Defaults to True)
+        [6] threshold (int) - States the value above which a neuron will set its value to 1, and below which will set it to zero. If None, neurons value does not change. (Defaults to None)
+        [7] threshold_change (string) - states how a neurons threshold can be modified during trainin. None keeps the value constant. (Defaults to None)
+        [8] bias_node (bool) - Tells the network whether to include a bias node (A node with a permenant value of 1 which brnanches to all other non-input nodes) (default to True)"""
+    def __init__(self, dimensions, random_weights=True, threshold=None, threshold_change=None, bias_node=False):
+        self.input_count = dimensions[0]
+        self.output_count = dimensions[1]
+        self.hidden_layers_count = dimensions[2]
+        self.hidden_layers_neuron_count = dimensions[3]
+        self.threshold = threshold
+        self.threshold_change = threshold_change
         self.neurons = []
         self.initialise_neurons()
         self.initialise_branches()
@@ -49,6 +74,8 @@ class Network:
         if random_weights: self.randomise_branch_weights()
 
     def propagate(self, data):
+        """Send data through the network.
+            Requires a list of values of equal length to the number of input neurons"""
         if len(data) != len(self.neurons[0]):
             raise AttributeError("Wrong number of data points provided. Expected {}, got {}".format(len(neurons[0]), len(data)))
         for i in range(len(data)):
@@ -60,6 +87,8 @@ class Network:
                 for branch in neuron.input_branches:
                     total += branch.start_neuron.value * branch.weight
                 neuron.value = self.stolen_sigmoid_function(total)
+                if neuron.threshold:
+                    neuron.value = 1 if neuron.value > neuron.threshold else 0
 
     def train_network_back_propagate(self, data, repititions):
         # for i in range(repititions):
@@ -81,6 +110,7 @@ class Network:
         pass
 
     def initialise_neurons(self):
+        """Create the requisite number of neurons in each layer, and store in self.neurons"""
         for layer in range(self.hidden_layers_count+2):
             self.neurons.append([])
             neuron_count = self.hidden_layers_neuron_count
@@ -97,7 +127,9 @@ class Network:
                     "Layer {} Neuron {}".format(layer, number),
                     layer,
                     number,
-                    neuron_type))
+                    neuron_type,
+                    self.threshold,
+                    self.threshold_change))
 
     def initialise_branches(self):
         for i in range(len(self.neurons)-1):
@@ -180,13 +212,9 @@ class Network:
         plt.show()
 
 class RandomTrainer:
-    def __init__(self, network_specs, training_data):
-        self.network_specs = network_specs
+    def __init__(self, network, training_data):
+        self.network = network
         self.training_data = training_data
-        self.initial_network = self.generate_network()
-
-    def generate_network(self):
-        return Network(*self.network_specs)
 
     def clone_networks(self, network, copies):
         network_list = []
@@ -203,7 +231,7 @@ class RandomTrainer:
                     if branch.weight < -1: branch.weight = -1
 
     def train_randomly(self, repititions):
-        best_network = self.initial_network
+        best_network = self.network
         for rep in range(repititions):
             network_list = self.clone_networks(best_network, 5)
             for i in range(1, len(network_list)):
@@ -229,17 +257,18 @@ class RandomTrainer:
 xor_switch_data = [
     ([0, 0], [0]),
     ([0, 1], [1]),
-    ([1, 0], [1]),
+    ([1, 0], [0]),
     ([1, 1], [0])
     ]
 
-ran = RandomTrainer([2, 1, 2, 10], xor_switch_data)
-network = ran.train_randomly(1000)
+network = Network([2, 1, 1, 4], threshold=0.5)
+ran = RandomTrainer(network, xor_switch_data)
+network = ran.train_randomly(20)
 network.propagate([0, 0])
 network.print_input_output()
-network.propagate([1, 0])
-network.print_input_output()
 network.propagate([0, 1])
+network.print_input_output()
+network.propagate([1, 0])
 network.print_input_output()
 network.propagate([1, 1])
 network.print_input_output()
