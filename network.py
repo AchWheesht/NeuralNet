@@ -11,16 +11,16 @@ class Neuron:
     """A repeatable class that simulates a neural node. Stores the following information:
         [1] Name and location of neuron (name, layer, number)
         [2] The nodes type (input, output, normal or bias)
-        [3] The branches that terminate at this neuron (input_branches)
-        [4] The branches that originate from this neuron (output_branches)
+        [3] The synapses that terminate at this neuron (input_synapses)
+        [4] The synapses that originate from this neuron (output_synapses)
         [5] The Neurons Last recorded value and error during propagation (value, error)"""
     def __init__(self, name, layer, number, neuron_type="normal", threshold=None, threshold_change=None):
         self.name = name
         self.layer = layer
         self.number = number
         self.neuron_type = neuron_type
-        self.input_branches = []
-        self.output_branches = []
+        self.input_synapses = []
+        self.output_synapses = []
         self.value = None
         self.threshold = threshold
         self.threshold_change = threshold_change
@@ -29,8 +29,8 @@ class Neuron:
     def __repr__(self):
         return "(Neuron Object. Layer {}, Number {}. Value {}.)".format(self.layer, self.number, self.value)
 
-class Branch:
-    """A branch linking two neurons together. Knows:
+class Synapse:
+    """A synapse linking two neurons together. Knows:
         [1] The neuron it originates from (start_neuron)
         [2] The neuron it terminates at (end_neuron)
         [3] Its own weight (weight)"""
@@ -41,7 +41,7 @@ class Branch:
         self.stored_data = None
 
     def __repr__(self):
-        return "(Branch from ({}, {}) to ({}, {}), Weight {})".format(
+        return "(synapse from ({}, {}) to ({}, {}), Weight {})".format(
             self.start_neuron.layer,
             self.start_neuron.number,
             self.end_neuron.layer,
@@ -49,13 +49,13 @@ class Branch:
             self.weight)
 
 class Network:
-    """A simulation of a neural network using objects to represent neurons and the branches between them. Use the following parameters:
+    """A simulation of a neural network using objects to represent neurons and the synapses between them. Use the following parameters:
         [1] dimensions (list of int) - a list for the dimensions on the network: [input neurons, output neurons, number of hidden layers, number of neurons per hidden layer] (requred)
         [1] input_count (int) - How many input neurons the network should have (required)
         [2] output_count (int) - How many output neurons the network should have (required)
         [3] hidden_layers (int) - How many hidden layers the network hidden_layers (required)
         [4] hidden_layers_count(int) - How many neurons are in each hidden layers (requried)
-        [5] random_weights (bool) - True will give each branch in the network a random weight on generation (Defaults to True)
+        [5] random_weights (bool) - True will give each synapse in the network a random weight on generation (Defaults to True)
         [6] threshold (int) - States the value above which a neuron will set its value to 1, and below which will set it to zero. If None, neurons value does not change. (Defaults to None)
         [7] threshold_change (string) - states how a neurons threshold can be modified during trainin. None keeps the value constant. (Defaults to None)
         [8] bias_node (bool) - Tells the network whether to include a bias node (A node with a permenant value of 1 which brnanches to all other non-input nodes) (default to True)"""
@@ -68,10 +68,10 @@ class Network:
         self.threshold_change = threshold_change
         self.neurons = []
         self.initialise_neurons()
-        self.initialise_branches()
-        self.branches = [[y.input_branches for y in x] for x in self.neurons]
+        self.initialise_synapses()
+        self.synapses = [[y.input_synapses for y in x] for x in self.neurons]
         self.initialise_bias(bias_node)
-        if random_weights: self.randomise_branch_weights()
+        if random_weights: self.randomise_synapse_weights()
 
     def propagate(self, data):
         """Send data through the network.
@@ -84,8 +84,8 @@ class Network:
             current_layer = self.neurons[i]
             for neuron in current_layer:
                 total = 0
-                for branch in neuron.input_branches:
-                    total += branch.start_neuron.value * branch.weight
+                for synapse in neuron.input_synapses:
+                    total += synapse.start_neuron.value * synapse.weight
                 neuron.value = self.stolen_sigmoid_function(total)
                 if neuron.threshold:
                     neuron.value = 1 if neuron.value > neuron.threshold else 0
@@ -101,8 +101,8 @@ class Network:
         #         for i in range(len(self.neurons[-1])):
         #             neuron = self.neurons[-1][i]               #Set Neuron
         #             error_slope = error_slopes[i]              #Set appropriate error slope
-        #             for branch in neuron.input_branches:
-        #                 branch.stored_data = branch.weight + (branch.weight * error_slope))   #Work out new weight ands store it
+        #             for synapse in neuron.input_synapses:
+        #                 synapse.stored_data = synapse.weight + (synapse.weight * error_slope))   #Work out new weight ands store it
         #
         #         for i in range(len(self.neurons)-2, 0, -1): #For each layer of neurons, working backwards
         #             for neuron in self.neurons[i]:  #For each neuron in that layer
@@ -131,16 +131,16 @@ class Network:
                     self.threshold,
                     self.threshold_change))
 
-    def initialise_branches(self):
+    def initialise_synapses(self):
         for i in range(len(self.neurons)-1):
             next_layer_count = len(self.neurons[i+1])
             layer = self.neurons[i]
             for neuron in layer:
                 for n in range(next_layer_count):
                     target_neuron = self.neurons[i+1][n]
-                    branch = Branch(neuron, target_neuron)
-                    neuron.output_branches.append(branch)
-                    target_neuron.input_branches.append(branch)
+                    synapse = Synapse(neuron, target_neuron)
+                    neuron.output_synapses.append(synapse)
+                    target_neuron.input_synapses.append(synapse)
 
     def initialise_bias(self, bias_node):
         if not bias_node:
@@ -151,15 +151,15 @@ class Network:
         for layer in self.neurons:
             for neuron in layer:
                 if neuron.neuron_type != "input":
-                    branch = Branch(self.bias_node, neuron)
-                    self.bias_node.output_branches.append(branch)
-                    neuron.input_branches.append(branch)
+                    synapse = Synapse(self.bias_node, neuron)
+                    self.bias_node.output_synapses.append(synapse)
+                    neuron.input_synapses.append(synapse)
 
-    def randomise_branch_weights(self):
-        for layer in self.branches:
+    def randomise_synapse_weights(self):
+        for layer in self.synapses:
             for neuron in layer:
-                for branch in neuron:
-                    branch.weight = (2*np.random.random(1)[0]) - 1
+                for synapse in neuron:
+                    synapse.weight = (2*np.random.random(1)[0]) - 1
 
     def retrieve_neuron(self, layer, number):
         return self.neurons[layer][number]
@@ -190,8 +190,8 @@ class Network:
         for layer in self.neurons:
             for neuron in layer:
                 print("Name: ", neuron.name)
-                print("input_branches", neuron.input_branches)
-                print("output_branches", neuron.output_branches)
+                print("input_synapses", neuron.input_synapses)
+                print("output_synapses", neuron.output_synapses)
                 print()
 
     def export_graph(self):
@@ -203,11 +203,11 @@ class Network:
                 circle = plt.Circle((neuron.layer+0.1, neuron.number+0.05), 0.2, color="gray")
                 ax.add_artist(circle)
                 ax.annotate("{}".format(round(neuron.value, 2)), xy=(neuron.layer, neuron.number))
-                for branch in neuron.input_branches:
-                    x, y = (branch.start_neuron.layer, branch.end_neuron.layer),(branch.start_neuron.number, branch.end_neuron.number)
+                for synapse in neuron.input_synapses:
+                    x, y = (synapse.start_neuron.layer, synapse.end_neuron.layer),(synapse.start_neuron.number, synapse.end_neuron.number)
                     line = plt.Line2D(x, y)
                     ax.add_artist(line)
-                    ax.annotate("{}".format(round(branch.weight, 2)), xy=(x[0]+0.2, y[0]-(y[1]/10)))
+                    ax.annotate("{}".format(round(synapse.weight, 2)), xy=(x[0]+0.2, y[0]-(y[1]/10)))
 
         plt.show()
 
@@ -226,12 +226,18 @@ class RandomTrainer:
         return network_list
 
     def modulate_weights(self, network):
-        for layer in network.branches:
+        for layer in network.synapses:
             for neuron in layer:
-                for branch in neuron:
-                    branch.weight += ((2*(np.random.random(1)[0]))-1)/self.intensity
-                    if branch.weight > 1: branch.weight = 1
-                    if branch.weight < -1: branch.weight = -1
+                for synapse in neuron:
+                    synapse.weight += ((2*(np.random.random(1)[0]))-1)/self.intensity
+                    if synapse.weight > 1: synapse.weight = 1
+                    if synapse.weight < -1: synapse.weight = -1
+        if network.threshold_change == "random":
+            for layer in network.neurons:
+                for neuron in layer:
+                    neuron.threshold += ((2*(np.random.random(1)[0]))-1)/self.intensity
+                    if neuron.threshold > 1: synapse.weight = 1
+                    if neuron.threshold < -1: synapse.weight = -1
 
     def train(self, repititions):
         best_network = self.network
@@ -276,7 +282,7 @@ ran = RandomTrainer(network, data, 2)
 
 #Train Network
 #Argument here is number of repititions
-network = ran.train(50)
+network = ran.train(200)
 
 #Print network results
 for datum in data:
