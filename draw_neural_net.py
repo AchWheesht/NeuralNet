@@ -79,7 +79,6 @@ def draw_neural_net(ax, network, print_values=True):
                 x = [n*h_spacing + left, (n + 1)*h_spacing + left]  #Line coords
                 y= [layer_top_a - m*v_spacing, layer_top_b - o*v_spacing]
                 length = np.sqrt(((x[1]-x[0])**2)+((y[1]-y[0])**2))
-                print(length)
                 offset = length*0.95
                 word_location = [((x[1]-x[0])*offset)+x[0], (((y[1]-y[0])*offset)+y[0])] #Weight Coords
                 word_location[1] += (y[1]-y[0])*0.045 #Offset y so that weight appears at consistent location

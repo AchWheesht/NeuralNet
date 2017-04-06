@@ -206,9 +206,7 @@ class Network:
 class RandomTrainer:
     """A trainer for networks
         Trains by slightly picking the best network out of a group of twenty (using mean squared error) """
-    def __init__(self, network, training_data, intensity=10):
-        self.network = network
-        self.training_data = training_data
+    def __init__(self, intensity=10):
         self.intensity = intensity
 
     def clone_networks(self, network, copies):
@@ -231,8 +229,8 @@ class RandomTrainer:
                     if neuron.threshold > 1: synapse.weight = 1
                     if neuron.threshold < -1: synapse.weight = -1
 
-    def train(self, repititions):
-        best_network = self.network
+    def train(self, network, data, repititions):
+        best_network = network
         for rep in range(repititions):
             network_list = self.clone_networks(best_network, 5)
             for i in range(1, len(network_list)):
@@ -240,10 +238,10 @@ class RandomTrainer:
             errors = []
             for network in network_list:
                 error_data = []
-                for data in self.training_data:
-                    network.propagate(data[0])
+                for datum in data:
+                    network.propagate(datum[0])
                     result = [x.value for x in network.neurons[-1]]
-                    squared_errors = [(x - y)**2 for x, y in zip(result, data[1])]
+                    squared_errors = [(x - y)**2 for x, y in zip(result, datum[1])]
                     root_mean_error = stat.mean(squared_errors)**0.5
                     error_data.append(root_mean_error)
                 errors.append(stat.mean(error_data))
@@ -254,40 +252,31 @@ class RandomTrainer:
 
 
 
-#Data to train with, Format ([input], [output])
-    #Example here is xor switch
-data = [
-    ([0, 0], [0]),
-    ([0, 1], [1]),
-    ([1, 0], [1]),
-    ([1, 1], [0])
-    ]
+if __name__ == "__main__":
+    #Data to train with, Format ([input], [output])
+        #Example here is xor switch
+    data = [
+        ([0, 0], [0]),
+        ([0, 1], [1]),
+        ([1, 0], [1]),
+        ([1, 1], [0])
+        ]
 
+    #Initialise Network
+    network = Network([2, 1, 2, 5], threshold=0.5)
 
-#Initialise Network
-network = Network([2, 1, 2, 5], threshold=0.5)
+    #Build Darwinian Trainer
+        #Argument is how much the trainer can eandomly modify the weights each generation: the highers the number, the less is can
+        #mess with them.
+    ran = RandomTrainer(2)
 
-#Build Darwinian Trainer
-    #Float argument is how much the trainer can eandomly modify the weights each generation: the highers the number, the less is can
-    #mess with them.
-ran = RandomTrainer(network, data, 2)
+    #Train Network
+    #Argument here is number of repititions
+    network = ran.train(network, data, 50)
 
-#Train Network
-#Argument here is number of repititions
-network = ran.train(50)
-
-#Print network results
-for datum in data:
-    network.propagate(datum[0])
+    #Print network results
+    for datum in data:
+        network.propagate(datum[0])
     network.print_input_output()
 
-network.export_graph()
-
-#Display Rudimentary grpah
-# if input("Show Graph?") == "y":
-#     network.export_graph()
-
-# fig = plt.figure()
-# printer.draw_neural_net(fig.gca(), network, print_values=False)
-# plt.tight_layout()
-# plt.show()
+    network.export_graph()
