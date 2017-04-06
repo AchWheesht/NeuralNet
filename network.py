@@ -195,21 +195,13 @@ class Network:
                 print()
 
     def export_graph(self):
-        fig = plt.gcf()
-        ax = fig.gca()
-        plt.axis([-2, 4, -2, 4])
-        for layer in self.neurons:
-            for neuron in layer:
-                circle = plt.Circle((neuron.layer+0.1, neuron.number+0.05), 0.2, color="gray")
-                ax.add_artist(circle)
-                ax.annotate("{}".format(round(neuron.value, 2)), xy=(neuron.layer, neuron.number))
-                for synapse in neuron.input_synapses:
-                    x, y = (synapse.start_neuron.layer, synapse.end_neuron.layer),(synapse.start_neuron.number, synapse.end_neuron.number)
-                    line = plt.Line2D(x, y)
-                    ax.add_artist(line)
-                    ax.annotate("{}".format(round(synapse.weight, 2)), xy=(x[0]+0.2, y[0]-(y[1]/10)))
-
-        plt.show()
+        fig = plt.figure()
+        printer.draw_neural_net(fig.gca(), self, print_values=True)
+        plt.tight_layout()
+        fig.set_size_inches(10, 10)
+        fig.gca().xaxis.set_major_locator(plt.NullLocator())
+        fig.gca().yaxis.set_major_locator(plt.NullLocator())
+        plt.savefig("diagrams/plot.png", bbox_inches="tight", pad_inches=0)
 
 class RandomTrainer:
     """A trainer for networks
@@ -273,7 +265,7 @@ data = [
 
 
 #Initialise Network
-network = Network([2, 1, 2, 4], threshold=0.5)
+network = Network([2, 1, 2, 5], threshold=0.5)
 
 #Build Darwinian Trainer
     #Float argument is how much the trainer can eandomly modify the weights each generation: the highers the number, the less is can
@@ -282,13 +274,20 @@ ran = RandomTrainer(network, data, 2)
 
 #Train Network
 #Argument here is number of repititions
-network = ran.train(200)
+network = ran.train(50)
 
 #Print network results
 for datum in data:
     network.propagate(datum[0])
     network.print_input_output()
 
+network.export_graph()
+
 #Display Rudimentary grpah
-if input("Show Graph?") == "y":
-    network.export_graph()
+# if input("Show Graph?") == "y":
+#     network.export_graph()
+
+# fig = plt.figure()
+# printer.draw_neural_net(fig.gca(), network, print_values=False)
+# plt.tight_layout()
+# plt.show()
