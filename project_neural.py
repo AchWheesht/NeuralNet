@@ -2,7 +2,7 @@ if __name__ == "__main__":
     from flask import Flask, app, request, session, render_template, redirect, send_from_directory, make_response
     import network as net_gen
 else:
-    from philsite import app, request, session, render_template, redirect, send_from_directory, make_response
+    from philsite import philsite, app, request, session, render_template, redirect, send_from_directory, make_response
     import philsite.project_neural.network as net_gen
 import os, time
 from functools import wraps, update_wrapper
