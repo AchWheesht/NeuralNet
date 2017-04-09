@@ -24,7 +24,7 @@ else:
     app_dir = philsite.app_dir                                 #Directory of __init__ python file
     path = "/neural_net"                                       #Url Path
     dir_name="project_neural/"                                 #Directory of project on website
-    static_dir = app_dir + "/philsite/project_neural/static"   #Directory for static files
+    static_dir = app_dir + "/project_neural/static"            #Directory for static files
 
 network_dir = os.path.dirname(os.path.realpath(__file__))  #Directory for network object to use for storing resources
 #network_dir = "" if network_dir == "/" else network_dir    #Edge (not really) case
