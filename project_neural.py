@@ -8,6 +8,8 @@ import os, time
 from functools import wraps, update_wrapper
 from datetime import datetime
 
+os.path.dirname(os.path.realpath(__file__)) 
+
 #Run as Standalone
 if __name__ == "__main__":
     app_dir = os.path.dirname(os.path.realpath(__file__))       #Current Directory
