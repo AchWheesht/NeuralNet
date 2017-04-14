@@ -1,14 +1,13 @@
+import sys, os, time
+sys.path.append(os.path.dirname(__file__))
+
 if __name__ == "__main__":
     from flask import Flask, app, request, session, render_template, redirect, send_from_directory, make_response
-    import network as net_gen
 else:
     from philsite import philsite, app, request, session, render_template, redirect, send_from_directory, make_response
-    import philsite.project_neural.network as net_gen
-import os, time
+import network as net_gen
 from functools import wraps, update_wrapper
 from datetime import datetime
-
-os.path.dirname(os.path.realpath(__file__)) 
 
 #Run as Standalone
 if __name__ == "__main__":
