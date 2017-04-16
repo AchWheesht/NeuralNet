@@ -13,8 +13,6 @@ try:
 except ImportError:
     import draw_neural_net as printer
 
-print("I imported")
-
 #seed random number to make calculations consistent
 #np.random.seed(1)
 
