@@ -5,7 +5,7 @@ if __name__ == "__main__":
     from flask import Flask, app, request, session, render_template, redirect, send_from_directory, make_response
 else:
     from philsite import philsite, app, request, session, render_template, redirect, send_from_directory, make_response
-import network as net_gen
+import network_generator as net_gen
 from functools import wraps, update_wrapper
 from datetime import datetime
 
