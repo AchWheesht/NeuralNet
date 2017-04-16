@@ -1,1 +1,3 @@
-diagrams/*.ping
+*.pyc
+static/diagrams/*
+!static/diagrams/.gitkeep
