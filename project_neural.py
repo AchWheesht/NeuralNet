@@ -35,6 +35,22 @@ network = net_gen.Network([2, 1, 1, 3], threshold=0.5, path=network_dir)
 network.export_graph()
 training_data = net_gen.TrainingData(network, [([0, 0], [0]), ([0, 1], [1]), ([1, 0], [1]), ([1, 1], [0])])
 
+error = None
+
+def error_check(func):
+    @wraps(func)
+    def check_for_errors(*args, **kwargs):
+        global path
+        global error
+        try:
+            return func(*args, **kwargs)
+        except ValueError as e:
+            print(e)
+            error = "Incorrect input value"
+            return neural_index()
+    return check_for_errors
+
+#this doesn't seem to be working
 def nocache(view):
     """Wrapper to disable caching on a page (Currently Nonfuctional? To be worked on)"""
     @wraps(view)
@@ -52,14 +68,23 @@ def neural_static(filename):
     """Serves static files"""
     return send_from_directory(static_dir, filename)
 
+@app.route(path+"error")
+def error_redirect():
+    return redirect(path)
+
 @app.route(path)
 @nocache
 def neural_index():
     """Main page"""
-    return render_template(dir_name+"templates/neural_net.html", network=network, training_data=training_data, path=path)
+    global error
+    print(error)
+    error_message = error
+    error = None
+    return render_template(dir_name+"templates/neural_net.html", network=network, training_data=training_data, path=path, error=error_message)
 
 
 @app.route(path+"new_net", methods=["GET", "POST"])
+@error_check
 def generate_new_net():
     """Generates a new network"""
     global network
@@ -67,15 +92,16 @@ def generate_new_net():
         print(request.form)
         data = request.form
         network = net_gen.Network([int(data["inputs"]),
-                                    int(data["outputs"]),
-                                    int(data["hidden_layers"]),
-                                    int(data["hidden_neurons"])],
-                                    threshold=0.5,
-                                    path=network_dir)
+                                int(data["outputs"]),
+                                int(data["hidden_layers"]),
+                                int(data["hidden_neurons"])],
+                                threshold=0.5,
+                                path=network_dir)
         network.export_graph()
     return redirect(path)
 
 @app.route(path+"propagate", methods=["GET", "POST"])
+@error_check
 def propagate():
     if request.method == "POST":
         data = request.form
@@ -86,6 +112,7 @@ def propagate():
     return redirect(path)
 
 @app.route(path+"darwin_train", methods=["GET", "POST"])
+@error_check
 def darwin_train():
     if request.method == "POST":
         global network
@@ -98,6 +125,7 @@ def darwin_train():
     return redirect(path)
 
 @app.route(path+"new_data", methods=["GET", "POST"])
+@error_check
 def add_data():
     if request.method == "POST":
         data = request.form

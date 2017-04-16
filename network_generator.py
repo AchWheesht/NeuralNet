@@ -1,17 +1,14 @@
 import numpy as np
-import copy
-import random
-import os
-import statistics as stat
-import matplotlib
+import copy, random, os, matplotlib
 matplotlib.use('Agg')
+import statistics as stat
 import matplotlib.pyplot as plt
 from PIL import Image, ImageChops
 #import draw_neural_net as printer
 try:
-    import philsite.project_neural.draw_neural_net as printer
-except ImportError:
     import draw_neural_net as printer
+except ImportError:
+    import philsite.project_neural.draw_neural_net as printer
 
 #seed random number to make calculations consistent
 #np.random.seed(1)
@@ -299,6 +296,7 @@ class TrainingData:
 
     def export_data(self):
         return self.data
+
 
 if __name__ == "__main__":
     #Data to train with, Format ([input], [output])
